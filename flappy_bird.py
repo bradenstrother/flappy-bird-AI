@@ -11,8 +11,8 @@ WIN_HEIGHT = 1024
 # 
 BIRD_IMGS = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
 PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
-BASE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
-BG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bg.png")))
+BASE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
+BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bg.png")))
 
 
 class Bird:
@@ -134,8 +134,37 @@ class Pipe:
         return False
 
 
+class Base:
+    VEL = 5
+    WIDTH = BASE_IMG.get_width()
+    IMG = BASE_IMG
+    
+    def __init__(self, y):
+        self.y = y
+        self.x1 = 0
+        self.x2 = self.WIDTH
+    
+    # Moves 2 images of the base together to look like 1 continous image
+    # Essentially cycles the images to look like an infinite background
+    def move(self):
+        self.x1 -= self.VEL
+        self.x2 -= self.VEL
+        
+        # Once one of the images is off screen
+        # move it behind the other image
+        if self.x1 + self.WIDTH < 0:
+            self.x1 = self.x2 + self.WIDTH
+        
+        if self.x2 + self.WIDTH < 0:
+            self.x2 = self.x1 + self.WIDTH
+    
+    def draw(self, win):
+        win.blit(self.IMG, (self.x1, self.y))
+        win.blit(self.IMG, (self.x2, self.y))
+
+
 def draw_window(win, bird):
-    win.blit(BG, (0,0))
+    win.blit(BG_IMG, (0,0))
     bird.draw(win)
     pygame.display.update()
 
