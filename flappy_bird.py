@@ -10,7 +10,9 @@ pygame.font.init()
 WIN_WIDTH = 575
 WIN_HEIGHT = 900
 
-BIRD_IMGS = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
+GEN = 0
+
+BIRD_IMGS = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird" + str(x) + ".png"))) for x in range(1,4)]
 PIPE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
 BASE_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
 BG_IMG = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bg.png")))
@@ -166,14 +168,19 @@ class Base:
         win.blit(self.IMG, (self.x2, self.y))
 
 
-def draw_window(win, birds, pipes, base, score):
+def draw_window(win, birds, pipes, base, score, gen):
     win.blit(BG_IMG, (0,0))
     
     for pipe in pipes:
         pipe.draw(win)
     
+    # Draws text for the score for the current generation
     text = STAT_FONT.render("Score: " + str(score), 1, (255,255,255))
     win.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
+    
+    # Draws text for the generation iteration
+    text = STAT_FONT.render("Gen: " + str(gen), 1, (255,255,255))
+    win.blit(text, (10, 10))
     
     base.draw(win)
     for bird in birds:
@@ -182,6 +189,10 @@ def draw_window(win, birds, pipes, base, score):
 
 
 def eval_genomes(genomes, config):
+    
+    global GEN
+    GEN += 1
+    
     nets = []
     ge = []
     birds = []
@@ -223,7 +234,23 @@ def eval_genomes(genomes, config):
             bird.move()
             ge[x].fitness += 0.1
             
+            # Sets NEAT input values
+            # Uses 3 inputs: 
+            #   1: bird y position, 
+            #   2: the distance between the birds y and the top pipe, and 
+            #   3: the distance between birds y and the bottom pipe
             output = nets[x].activate((bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom)))
+            
+            # Inputs using 2 variables instead of 3
+            #   1: bird y position,
+            #   2: the distance between the birds y and either the top or bottom pipe
+            # I tried this to see if NEAT would be able to learn to fly through the pipes without knowing the location of both pipes
+            # and essentially learn the height of the other pipe
+            # output = nets[x].activate((bird.y, abs(bird.y - pipes[pipe_ind].height)))
+            # output = nets[x].activate((bird.y, abs(bird.y - pipes[pipe_ind].bottom)))
+            
+            # Might could also try using more inputs such as just the x and y locations of the pipes and the bird x and y or just y
+            # output = nets[x].activate((bird.y, pipes[pipe_ind].height, pipes[pipe_ind].bottom))
             
             if output[0] >= 0.5:
                 bird.jump()
@@ -263,7 +290,7 @@ def eval_genomes(genomes, config):
                 ge.pop(x)
         
         base.move()
-        draw_window(win, birds, pipes, base, score)
+        draw_window(win, birds, pipes, base, score, GEN)
 
 
 def run(config_path):
